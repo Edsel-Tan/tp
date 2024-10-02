@@ -7,12 +7,10 @@
       "headings": {
         "about-us": "About Us",
         "project-team": "Project team",
+        "nathan-loo": "Nathan Loo",
         "jerrell-lee": "Jerrell Lee",
         "ansel-chong": "Ansel Chong",
-        "jane-doe": "Jane Doe",
-        "johnny-doe": "Johnny Doe",
-        "hugh": "Hugh",
-        "james-doe": "James Doe"
+        "hugh": "Hugh"
       },
       "headingKeywords": {}
     },
@@ -166,6 +164,11 @@
       "headings": {
         "project-addressbook-level-3": "Project: AddressBook Level 3"
       },
+      "headingKeywords": {}
+    },
+    {
+      "src": "team/natlv.md",
+      "headings": {},
       "headingKeywords": {}
     }
   ]
