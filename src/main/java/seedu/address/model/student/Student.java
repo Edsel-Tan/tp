@@ -15,7 +15,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import seedu.address.commons.util.ToStringBuilder;
 import seedu.address.model.assignment.Assignment;
-import seedu.address.model.assignment.AssignmentQuery;
+import seedu.address.model.assignment.AssignmentName;
 import seedu.address.model.attendance.Attendance;
 import seedu.address.model.attendance.AttendanceRecord;
 import seedu.address.model.person.Address;
@@ -166,59 +166,29 @@ public class Student extends Person {
      *
      * @param assignment A valid assignment
      */
-    public void addAssignment(Assignment assignment) {
+    public boolean addAssignment(Assignment assignment) {
         requireAllNonNull(assignment);
-        assignments.add(assignment);
-    }
 
-    /**
-     * Adds an assignment at the specified index.
-     * @param index The index to add the assignment at.
-     * @param assignment A valid assignment.
-     */
-    public void addAssignment(int index, Assignment assignment) {
-        assert index >= 0 && index <= assignments.size();
-        requireAllNonNull(assignment);
-        assignments.add(index, assignment);
-    }
-
-    /**
-     * Returns the first index matching the given assignment query. If no such assignment is found, returns -1.
-     *
-     * @param assignmentQuery A valid assignment query.
-     * @return the index of the first assignment matching the query.
-     */
-    public int getAssignmentIndex(AssignmentQuery assignmentQuery) {
-        requireAllNonNull(assignmentQuery);
-        for (int i = 0; i < assignments.size(); i++) {
-            if (assignmentQuery.match(assignments.get(i))) {
-                return i;
+        for (Assignment assignment1 : assignments) {
+            if (assignment1.isSameAssignment(assignment)) {
+                return false;
             }
         }
-        return -1;
-    }
 
-    /**
-     * Deletes the assignment at the specified index.
-     *
-     * @param index A valid index.
-     * @return the deleted assignment
-     */
-    public Assignment deleteAssignment(int index) {
-        assert index >= 0 && index < assignments.size();
-        return assignments.remove(index);
+        assignments.add(assignment);
+        return true;
     }
 
     /**
      * Deletes the first assignment matching the given assignment query.
      *
-     * @param assignmentQuery A valid assignment query.
+     * @param assignmentName A valid assignment query.
      * @return the deleted assignment
      */
-    public Assignment deleteAssignment(AssignmentQuery assignmentQuery) {
-        requireAllNonNull(assignmentQuery);
+    public Assignment deleteAssignment(AssignmentName assignmentName) {
+        requireAllNonNull(assignmentName);
         for (Assignment assignment : assignments) {
-            if (assignmentQuery.match(assignment)) {
+            if (assignment.getAssignmentName().equals(assignmentName)) {
                 assignments.remove(assignment);
                 return assignment;
             }
@@ -233,13 +203,6 @@ public class Student extends Person {
      */
     public void addAttendanceRecord(AttendanceRecord ar) {
         attendanceRecords.add(ar);
-    }
-
-    /**
-     * Deletes the last assignment in the list.
-     */
-    public void deleteLastAssignment() {
-        assignments.remove(assignments.size() - 1);
     }
 
     /**

@@ -2,17 +2,20 @@ package seedu.address.logic.commands;
 
 import static java.util.Objects.requireNonNull;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_ASSIGNMENT;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_DEADLINE;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_GRADE;
 import static seedu.address.logic.parser.CliSyntax.PREFIX_NAME;
-import static seedu.address.logic.parser.CliSyntax.PREFIX_STATUS;
+import static seedu.address.logic.parser.CliSyntax.PREFIX_STUDENT_NUMBER;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import seedu.address.logic.commands.exceptions.CommandException;
 import seedu.address.model.Model;
 import seedu.address.model.assignment.Assignment;
-import seedu.address.model.assignment.AssignmentQuery;
+import seedu.address.model.assignment.AssignmentName;
 import seedu.address.model.person.Name;
 import seedu.address.model.student.Student;
+import seedu.address.model.student.StudentNumber;
 
 
 /**
@@ -26,10 +29,7 @@ public class DeleteAssignmentCommand extends Command {
             + "Parameters: "
             + PREFIX_NAME + "STUDENT_NAME "
             + PREFIX_ASSIGNMENT + "ASSIGNMENT "
-            + PREFIX_DEADLINE + "DEADLINE (OPTIONAL)"
-            + PREFIX_STATUS + "SUBMISSION STATUS (OPTIONAL)"
-            + PREFIX_STATUS + "GRADING STATUS (OPTIONAL)"
-            + PREFIX_GRADE + "GRADE (OPTIONAL)"
+            + PREFIX_STUDENT_NUMBER + "STUDENT NUMBER (OPTIONAL) "
             + "\n"
             + "Example: " + COMMAND_WORD + " "
             + PREFIX_NAME + "John Doe "
@@ -39,36 +39,71 @@ public class DeleteAssignmentCommand extends Command {
 
     public static final String MESSAGE_NO_STUDENT_FOUND = "No such student found!";
     public static final String MESSAGE_NO_ASSIGNMENT_FOUND = "No such assignment found!";
+    public static final String MESSAGE_DUPLICATE_STUDENT = "There is more than 1 student of the same name \n"
+            + "Their student numbers are as follows: %1$s \n"
+            + MESSAGE_USAGE;
 
-    public final AssignmentQuery assignmentQuery;
+    public final AssignmentName assignmentName;
     public final Name name;
-    private int index;
+    public final Optional<StudentNumber> studentNumber;
+
     private Assignment assignment;
+    private Student student;
 
     /**
      * Creates an DeleteAssignmentCommand to add the specified {@code Assignment}
      */
-    public DeleteAssignmentCommand(Name name, AssignmentQuery assignmentQuery) {
+    public DeleteAssignmentCommand(Name name, AssignmentName assignmentName) {
         this.name = name;
-        this.assignmentQuery = assignmentQuery;
+        this.assignmentName = assignmentName;
+        this.studentNumber = Optional.empty();
+    }
+
+    /**
+     * Creates an DeleteAssignmentCommand to add the specified {@code Assignment}
+     */
+    public DeleteAssignmentCommand(Name name, AssignmentName assignmentName, StudentNumber studentNumber) {
+        this.name = name;
+        this.assignmentName = assignmentName;
+        this.studentNumber = Optional.of(studentNumber);
     }
 
     @Override
     public CommandResult execute(Model model) throws CommandException {
         requireNonNull(model);
-        Student student = model.getStudentByName(name);
+        List<Student> studentList = model.getAllStudentsByName(name);
 
-        if (student == null) {
+        if (this.studentNumber.isPresent()) {
+            List<Student> filteredStudentList =
+                    studentList.stream().filter(s -> s.getStudentNumber().equals(studentNumber.get())).toList();
+            if (filteredStudentList.isEmpty()) {
+                throw new CommandException(MESSAGE_NO_STUDENT_FOUND);
+            }
+            student = filteredStudentList.get(0);
+            assignment = student.deleteAssignment(assignmentName);
+            if (assignment == null) {
+                throw new CommandException(MESSAGE_NO_ASSIGNMENT_FOUND);
+            }
+            return new CommandResult(String.format(MESSAGE_SUCCESS, assignment.getAssignmentName(), student.getName()));
+        }
+
+        if (studentList.isEmpty()) {
             throw new CommandException(MESSAGE_NO_STUDENT_FOUND);
         }
 
-        index = student.getAssignmentIndex(assignmentQuery);
+        if (studentList.size() > 1) {
+            throw new CommandException(String.format(MESSAGE_DUPLICATE_STUDENT,
+                    studentList.stream()
+                            .map(s -> s.getStudentNumber().toString())
+                            .collect(Collectors.joining(", "))));
+        }
 
-        if (index == -1) {
+        student = studentList.get(0);
+        assignment = student.deleteAssignment(assignmentName);
+        if (assignment == null) {
             throw new CommandException(MESSAGE_NO_ASSIGNMENT_FOUND);
         }
 
-        assignment = student.deleteAssignment(index);
         return new CommandResult(String.format(MESSAGE_SUCCESS, assignment.getAssignmentName(), student.getName()));
     }
 
@@ -84,7 +119,8 @@ public class DeleteAssignmentCommand extends Command {
 
         DeleteAssignmentCommand otherCommand = (DeleteAssignmentCommand) other;
         return otherCommand.name.equals(this.name)
-                && otherCommand.assignmentQuery.equals(this.assignmentQuery);
+                && otherCommand.assignmentName.equals(this.assignmentName)
+                && this.studentNumber.equals(otherCommand.studentNumber);
     }
 
     @Override
@@ -94,8 +130,7 @@ public class DeleteAssignmentCommand extends Command {
             return false;
         }
 
-        Student student = model.getStudentByName(name);
-        student.addAssignment(index, assignment);
+        student.addAssignment(assignment);
         return true;
     }
 }
